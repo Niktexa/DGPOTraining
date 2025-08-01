@@ -12,7 +12,13 @@ class SMACRunner(Runner):
     """Runner class to perform training, evaluation. and data collection for SMAC. See parent class for details."""
     def __init__(self, config):
         super(SMACRunner, self).__init__(config)
+
+        self.tb_logger = config.get("tb_logger", None)  # New for tensorboard
+        self.episode_count = 0  # New for tensorboard
+
         self.running_mean_cnt = 0
+
+       
 
     def run(self):
 
@@ -65,10 +71,40 @@ class SMACRunner(Runner):
                 data['loc_z_log_probs'] = loc_z_log_probs
                 data['dones'] = dones
                 self.insert(data, step)
+            
+
+            #  log episode metrics after data collection for tensorbaord
+            if self.tb_logger:
+                # Buffer now contains episode data
+                if hasattr(self, 'episode_rewards'):
+                    avg_rewards = np.mean(self.episode_rewards)
+                else:
+                    avg_rewards = np.mean(self.buffer.rewards[-self.episode_length:])  # Last episode's rewards
+
+                self.tb_logger.log_episode_metrics(avg_rewards, self.episode_length, self.episode_count)
+
+                # Log skill discovery progress (if available)
+                if hasattr(self.buffer, 'z_log_probs') and self.buffer.z_log_probs is not None:
+                    self.tb_logger.log_skill_discovery_progress(self.buffer.z_log_probs, self.episode_count)
+
 
             # compute return and update network
             self.compute()
             train_infos = self.train()
+            if self.tb_logger and train_infos:
+                self.tb_logger.log_training_metrics(train_infos, self.episode_count)
+
+                # DGPO Stage Tracking (optional, if diver_mask & Rex_mask are in train_infos)
+                if 'diver_mask' in train_infos and 'Rex_mask' in train_infos:
+                    stage = 1 if train_infos['diver_mask'] < 0.5 else 2
+                    stage_info = {
+                        'current_stage': stage,
+                        'diversity_threshold': getattr(self.trainer, 'div_thresh', 0),
+                        'performance_threshold': getattr(self.trainer, 'rex_thresh', 0)
+                    }
+                    self.tb_logger.log_stage_transitions(stage_info, self.episode_count)
+
+            
             
             # post process
             total_num_steps = (episode + 1) * self.episode_length * self.n_rollout_threads           
@@ -120,6 +156,9 @@ class SMACRunner(Runner):
             # eval
             if episode % self.eval_interval == 0 and self.use_eval:
                 self.eval(total_num_steps)
+
+            self.episode_count += 1
+
 
     def warmup(self):
         # reset env
