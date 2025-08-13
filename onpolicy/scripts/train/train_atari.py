@@ -411,65 +411,47 @@ def main(args):
         runner.writter.close()
 
 
+# if __name__ == "__main__":
+#     import sys
+#     sys.argv = [
+#     'train_atari.py',
+#     '--env_name', 'Atari',
+#     '--game_name', 'ALE/Pong-v5',
+#     '--max_z', '2',                    
+#     '--div_thresh', '0.9',              
+#     '--rex_thresh', '0.8',             
+#     '--alpha_rex', '1.0',              
+#     '--alpha_div', '1.0',              
+#     '--n_rollout_threads', '16',       
+#     '--episode_length', '128',          
+#     '--ppo_epoch', '4',                
+#     '--num_mini_batch', '4',           
+#     '--num_env_steps', '50000000',     
+#     '--experiment_name', 'pong_paper_exact_final',
+#     '--seed', '42'
+# ]
+#     main(sys.argv[1:])
+
+
+
 if __name__ == "__main__":
     import sys
     sys.argv = [
         'train_atari.py',
         '--env_name', 'Atari',
         '--game_name', 'ALE/Pong-v5',
-        '--max_z', '2',                    # ✅ Table 4
-        '--div_thresh', '0.9',             # ✅ Table 4  
-        '--rex_thresh', '0.8',             # ✅ Table 4
-        '--alpha_rex', '1.0',              
-        '--alpha_div', '1.0',              
-        '--n_rollout_threads', '16',       # ✅ Table 1: Atari = 16
-        '--episode_length', '128',         # ✅ Table 1: Atari = 128  
-        '--ppo_epoch', '4',                # ✅ Table 1: Atari = 4
-        '--num_mini_batch', '4',           # Reasonable for 16 threads
-        '--num_env_steps', '50000000',     
-        '--experiment_name', 'pong_paper_exact_final',
+        '--algorithm_name', 'ours',      # ← ADD THIS! (DGPO algorithm)
+        '--max_z', '2',
+        '--div_thresh', '0.9',
+        '--rex_thresh', '0.8',
+        '--alpha_rex', '1.0',
+        '--alpha_div', '1.0',
+        '--n_rollout_threads', '16',
+        '--episode_length', '128',
+        '--ppo_epoch', '4',
+        '--num_mini_batch', '4',
+        '--num_env_steps', '50000000',
+        '--experiment_name', 'pong_training_v2',
         '--seed', '42'
     ]
     main(sys.argv[1:])
-
-
-
-
-
-    # sys.argv = [
-    #     'train_atari.py', 
-    #     '--env_name', 'Atari', 
-    #     '--game_name', 'ALE/Pong-v5', 
-    #     '--max_z', '2',                    # Table 4: nz = 2
-    #     '--div_thresh', '.9',          # Table 4: log(0.9)
-    #     '--rex_thresh', '0.8',             # Table 4: 0.8
-    #     '--alpha_rex', '1.0',              # Not specified, reasonable default
-    #     '--alpha_div', '1.0',              # Not specified, reasonable default
-    #     '--n_rollout_threads', '128',      # Table 1: Atari = 128
-    #     '--episode_length', '400',         # Table 1: Atari = 400
-    #     '--ppo_epoch', '128',              # Table 1: Atari = 128
-    #     '--num_mini_batch', '32',          # Reasonable for 128 parallel envs
-    #     '--num_env_steps', '50000000',     # 50M steps for full paper reproduction
-    #     '--experiment_name', 'pong_paper_exact',
-    #     '--seed', '42'
-    # ]
-
-
-    # sys.argv = [
-    #         'train_atari.py', 
-    #         '--env_name', 'Atari', 
-    #         '--game_name', 'ALE/Pong-v5', 
-    #         '--max_z', '2',
-    #         '--div_thresh', '.9',
-    #         '--rex_thresh', '0.8',
-    #         '--alpha_rex', '1.0',
-    #         '--alpha_div', '1.0',
-    #         '--n_rollout_threads', '8',        # ← Reduced: 8 envs instead of 128
-    #         '--episode_length', '25',          # ← Reduced: 25 steps instead of 400
-    #         '--ppo_epoch', '2',                # ← Reduced: 2 epochs instead of 128
-    #         '--num_mini_batch', '2',           # ← Reduced: 2 batches instead of 32
-    #         '--num_env_steps', '10000',        # ← Reduced: ~50 episodes
-    #         '--experiment_name', 'tensorboard_test-v2',
-    #         '--seed', '42'
-    #     ]
-
