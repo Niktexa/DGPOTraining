@@ -172,8 +172,33 @@ class R_MAPPO():
         diver_mask = z_log_probs.detach() > math.log(self.div_thresh)
 
         cur_value = self.ex_value_normalizer.get_z_mean()
-        Rex_mask = (cur_value > self.rex_thresh) # -50, -3
+        Rex_mask = (cur_value > self.rex_thresh) 
         Rex_mask = Rex_mask[z_idxs_batch]
+
+        if self.env_num % 10 == 0:
+            print(f"\n🔬 DIVER_MASK ANALYSIS - Update {self.env_num}:")
+            print(f"  div_thresh parameter: {self.div_thresh}")
+            print(f"  log(div_thresh): {math.log(self.div_thresh):.4f}")
+            print(f"  z_log_probs stats:")
+            print(f"    min: {z_log_probs.min():.4f}")
+            print(f"    max: {z_log_probs.max():.4f}")
+            print(f"    mean: {z_log_probs.mean():.4f}")
+            print(f"  Threshold comparison:")
+            print(f"    Need z_log_probs > {math.log(self.div_thresh):.4f}")
+            print(f"    Current best: {z_log_probs.max():.4f}")
+            print(f"    Gap to close: {math.log(self.div_thresh) - z_log_probs.max():.4f}")
+            print(f"  Diver_mask activation:")
+            print(f"    Elements above threshold: {(z_log_probs.detach() > math.log(self.div_thresh)).sum().item()}")
+            print(f"    Total elements: {z_log_probs.numel()}")
+            print(f"    Diver_mask mean: {(diver_mask*1.).mean():.4f}")
+            
+            # Check if we're getting closer
+            if hasattr(self, 'prev_z_log_max'):
+                improvement = z_log_probs.max().item() - self.prev_z_log_max
+                print(f"  Progress: {improvement:+.4f} (positive = getting closer to threshold)")
+            self.prev_z_log_max = z_log_probs.max().item()
+            print()
+
 
         if self.algo_name == "MAPPO":
             target = ex_L_clip

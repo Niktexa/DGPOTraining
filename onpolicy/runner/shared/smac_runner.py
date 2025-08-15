@@ -18,6 +18,9 @@ class SMACRunner(Runner):
 
         self.running_mean_cnt = 0
 
+        self.max_z = config['all_args'].max_z  # Get max_z from config
+
+
        
 
     def run(self):
@@ -91,6 +94,80 @@ class SMACRunner(Runner):
             # compute return and update network
             self.compute()
             train_infos = self.train()
+
+            #New for debugging: 
+
+            if episode % 10 == 0:  # Debug every 10 episodes
+                print(f"\n🔬 DGPO DEBUG - Episode {episode + 1}:")
+                
+                # 1. Check buffer contents for skills
+                if hasattr(self.buffer, 'obs') and self.buffer.obs is not None:
+                    max_z = getattr(self, 'max_z', getattr(self.trainer, 'max_z', 2))
+                    
+                    # Sample recent observations from buffer
+                    recent_obs = self.buffer.obs[-min(10, self.episode_length):].reshape(-1, self.buffer.obs.shape[-1])
+                    
+                    if recent_obs.shape[-1] > max_z:
+                        z_vectors = recent_obs[:, :max_z]
+                        
+                        skill_counts = {}
+                        for i in range(len(z_vectors)):
+                            skill = np.argmax(z_vectors[i]) if np.sum(z_vectors[i]) > 0 else -1
+                            if skill >= 0:
+                                skill_counts[skill] = skill_counts.get(skill, 0) + 1
+                        
+                        total_samples = sum(skill_counts.values())
+                        print(f"  📊 Buffer Skills (last {len(recent_obs)} samples):")
+                        for skill in range(max_z):
+                            count = skill_counts.get(skill, 0)
+                            pct = (count / total_samples * 100) if total_samples > 0 else 0
+                            print(f"    Skill {skill}: {count} samples ({pct:.1f}%)")
+                        
+                        # Alert on missing skills
+                        missing_skills = [s for s in range(max_z) if s not in skill_counts]
+                        if missing_skills:
+                            print(f"    ⚠️  MISSING SKILLS IN BUFFER: {missing_skills}")
+                
+                # 2. Check training info for skill-specific metrics
+                if train_infos:
+                    print(f"  🧠 Training Metrics:")
+                    
+                    # Look for skill-specific value losses
+                    skill_values = {}
+                    for key, value in train_infos.items():
+                        if 'value_loss' in key.lower() or 'cur_value' in key.lower():
+                            print(f"    {key}: {value:.4f}")
+                            if 'cur_value_' in key:
+                                skill_num = key.split('_')[-1]
+                                if skill_num.isdigit():
+                                    skill_values[int(skill_num)] = value
+                    
+                    # Check if any skills have zero value loss
+                    for skill, value in skill_values.items():
+                        if abs(value) < 1e-6:
+                            print(f"    ⚠️  WARNING: Skill {skill} has near-zero value: {value:.6f}")
+                    
+                    # Check DGPO-specific metrics
+                    dgpo_metrics = ['diver_mask', 'Rex_mask', 'z_loss', 'training_stage']
+                    for metric in dgpo_metrics:
+                        if metric in train_infos:
+                            print(f"    {metric}: {train_infos[metric]:.4f}")
+                
+                # 3. Check recent rewards
+                if hasattr(self.buffer, 'rewards') and self.buffer.rewards is not None:
+                    recent_rewards = self.buffer.rewards[-min(10, self.episode_length):].flatten()
+                    if len(recent_rewards) > 0:
+                        print(f"  💰 Recent Rewards: min={recent_rewards.min():.3f}, "
+                            f"max={recent_rewards.max():.3f}, mean={recent_rewards.mean():.3f}")
+                        
+                        # Check for unusual reward patterns
+                        zero_rewards = np.sum(recent_rewards == 0)
+                        if zero_rewards > len(recent_rewards) * 0.8:
+                            print(f"    ⚠️  WARNING: {zero_rewards}/{len(recent_rewards)} rewards are zero!")
+
+            #stop
+
+
             if self.tb_logger and train_infos:
                 self.tb_logger.log_training_metrics(train_infos, self.episode_count)
 
@@ -176,7 +253,6 @@ class SMACRunner(Runner):
     @torch.no_grad()
     def VMAPD_collect(self, step):
 
-        print(f"  Running skill discovery...")
         self.trainer.prep_rollout()
         
         # Get the flattened data
@@ -210,16 +286,50 @@ class SMACRunner(Runner):
         loc_z_log_probs = np.array(np.split(_t2n(loc_z_log_prob), self.n_rollout_threads))
         loc_rnn_states_z = np.array(np.split(_t2n(loc_rnn_state_z), self.n_rollout_threads))
         
-        print(f"  Skill discovery complete!")
         return z_log_probs, loc_z_log_probs, rnn_states_z, loc_rnn_states_z
 
-    @torch.no_grad()
-    def collect(self, step):
 
-        if step == 0:
-            print(f"  Collecting episode data...")
+#Origonal/modified for pong
+    # @torch.no_grad()
+    # def collect(self, step):
+
+    #     if step == 0:
+    #         print(f"  Collecting episode data...")
 
         
+    #     self.trainer.prep_rollout()
+    #     ex_value, in_value, action, action_log_prob, \
+    #         rnn_states, rnn_states_ex_critic, rnn_states_in_critic \
+    #             = self.trainer.policy.get_actions(
+    #                 np.concatenate(self.buffer.share_obs[step]),
+    #                 np.concatenate(self.buffer.obs[step]),
+    #                 np.concatenate(self.buffer.rnn_states[step]),
+    #                 np.concatenate(self.buffer.rnn_states_ex_critic[step]),
+    #                 np.concatenate(self.buffer.rnn_states_in_critic[step]),
+    #                 np.concatenate(self.buffer.masks[step]),
+    #                 np.concatenate(self.buffer.available_actions[step])
+    #             )
+    #     # [self.envs, agents, dim]
+    #     ex_values = np.array(np.split(_t2n(ex_value), self.n_rollout_threads))
+    #     in_values = np.array(np.split(_t2n(in_value), self.n_rollout_threads))
+    #     actions = np.array(np.split(_t2n(action), self.n_rollout_threads))
+    #     action_log_probs = np.array(np.split(_t2n(action_log_prob), self.n_rollout_threads))
+    #     rnn_states = np.array(np.split(_t2n(rnn_states), self.n_rollout_threads))
+    #     rnn_states_ex_critic = np.array(np.split(_t2n(rnn_states_ex_critic), self.n_rollout_threads))
+    #     rnn_states_in_critic = np.array(np.split(_t2n(rnn_states_in_critic), self.n_rollout_threads))
+
+    #     return ex_values, in_values, actions, action_log_probs, rnn_states, \
+    #                                     rnn_states_ex_critic, rnn_states_in_critic
+
+
+#For Debugging: 
+    @torch.no_grad()
+    def collect(self, step):
+        if step == 0:
+            print(f"  Collecting episode data...")
+            # DEBUG: Add skill tracking at episode start
+            self.skill_tracker = getattr(self, 'skill_tracker', {'steps': 0, 'skills': {}})
+
         self.trainer.prep_rollout()
         ex_value, in_value, action, action_log_prob, \
             rnn_states, rnn_states_ex_critic, rnn_states_in_critic \
@@ -232,6 +342,39 @@ class SMACRunner(Runner):
                     np.concatenate(self.buffer.masks[step]),
                     np.concatenate(self.buffer.available_actions[step])
                 )
+        
+        # 🔍 DEBUG: Track skills in observations
+        if hasattr(self, 'max_z') or hasattr(self.trainer, 'max_z'):
+            max_z = getattr(self, 'max_z', getattr(self.trainer, 'max_z', 2))
+            
+            # Extract skills from observations (first max_z elements are z-vector)
+            obs_batch = np.concatenate(self.buffer.obs[step])
+            if obs_batch.shape[-1] > max_z:  # Make sure obs has z-vector
+                z_vectors = obs_batch[:, :max_z]  # First max_z elements
+                
+                skill_counts = {}
+                for i in range(len(z_vectors)):
+                    skill = np.argmax(z_vectors[i]) if np.sum(z_vectors[i]) > 0 else -1
+                    if skill >= 0:
+                        skill_counts[skill] = skill_counts.get(skill, 0) + 1
+                
+                # Track cumulative skills
+                self.skill_tracker['steps'] += 1
+                for skill, count in skill_counts.items():
+                    self.skill_tracker['skills'][skill] = self.skill_tracker['skills'].get(skill, 0) + count
+                
+                # Print every 50 steps
+                if self.skill_tracker['steps'] % 50 == 0:
+                    total_obs = sum(self.skill_tracker['skills'].values())
+                    print(f"🔍 COLLECT STEP {self.skill_tracker['steps']} - Skills in observations:")
+                    for skill in range(max_z):
+                        count = self.skill_tracker['skills'].get(skill, 0)
+                        pct = (count / total_obs * 100) if total_obs > 0 else 0
+                        print(f"  Skill {skill}: {count} obs ({pct:.1f}%)")
+                    
+                    if total_obs == 0:
+                        print(f"  ⚠️  WARNING: NO VALID SKILLS DETECTED IN OBSERVATIONS!")
+
         # [self.envs, agents, dim]
         ex_values = np.array(np.split(_t2n(ex_value), self.n_rollout_threads))
         in_values = np.array(np.split(_t2n(in_value), self.n_rollout_threads))
@@ -243,6 +386,7 @@ class SMACRunner(Runner):
 
         return ex_values, in_values, actions, action_log_probs, rnn_states, \
                                         rnn_states_ex_critic, rnn_states_in_critic
+
 
     def insert(self, data, step):   
 
@@ -406,3 +550,7 @@ class SMACRunner(Runner):
         print("render win rate is {}.".format(render_win_rate))
         
         self.envs.save_replay()
+
+
+
+
