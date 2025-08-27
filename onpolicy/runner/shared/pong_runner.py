@@ -335,7 +335,7 @@ class PongRunner(Runner):
                 np.concatenate(eval_obs),
                 np.concatenate(eval_rnn_states),
                 np.concatenate(eval_masks),
-                deterministic=True
+                deterministic=False
             )
 
             eval_actions = np.array(np.split(_t2n(eval_action), self.n_eval_rollout_threads))
@@ -415,7 +415,7 @@ class PongRunner(Runner):
                     np.concatenate(test_obs), 
                     np.concatenate(eval_rnn_states),
                     np.concatenate(eval_masks),
-                    deterministic=True
+                    deterministic=False
                 )
                 
                 actions.append(int(_t2n(action)[0]))
