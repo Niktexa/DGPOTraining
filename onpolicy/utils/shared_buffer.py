@@ -164,10 +164,10 @@ class SharedReplayBuffer(object):
         gae = 0
         self.in_value_preds[-1] = next_in_value
 
-        print(f"BUFFER DEBUG - Starting intrinsic return computation:")
-        print(f"  next_in_value: {next_in_value}")
-        print(f"  z_log_probs shape: {self.z_log_probs.shape}")
-        print(f"  z_log_probs sample: {self.z_log_probs[0:3].flatten()}")
+        # print(f"BUFFER DEBUG - Starting intrinsic return computation:")
+        # print(f"  next_in_value: {next_in_value}")
+        # print(f"  z_log_probs shape: {self.z_log_probs.shape}")
+        # print(f"  z_log_probs sample: {self.z_log_probs[0:3].flatten()}")
     
 
         for step in reversed(range(self.z_log_probs.shape[0])):
@@ -178,8 +178,8 @@ class SharedReplayBuffer(object):
             # delta = rewards + self.gamma[1] * value_tp1 * self.masks[step+1] - value_t
             # gae = delta + self.gamma[1] * self.gae_lambda * self.masks[step+1] * gae
             
-            if step > self.z_log_probs.shape[0] - 3:
-                print(f"  Step {step}: rewards={rewards.flatten()}, value_t={value_t}, value_tp1={value_tp1}")
+            # if step > self.z_log_probs.shape[0] - 3:
+            #     print(f"  Step {step}: rewards={rewards.flatten()}, value_t={value_t}, value_tp1={value_tp1}")
 
             delta = rewards + self.gamma * value_tp1 * self.masks[step+1] - value_t  # Use 'rewards' not 'self.rewards[step]'
             gae = delta + self.gamma * self.gae_lambda * self.masks[step+1] * gae
@@ -187,8 +187,8 @@ class SharedReplayBuffer(object):
             
             self.in_returns[step] = gae + value_t
 
-            if step > self.z_log_probs.shape[0] - 3:
-                print(f"  Step {step}: delta={delta}, gae={gae}, in_return={self.in_returns[step]}")
+            # if step > self.z_log_probs.shape[0] - 3:
+            #     print(f"  Step {step}: delta={delta}, gae={gae}, in_return={self.in_returns[step]}")
             
 
   

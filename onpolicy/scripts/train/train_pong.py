@@ -183,16 +183,16 @@ if __name__ == "__main__":
     import sys
     test_args = [
         'train_atari.py',
-        '--env_name', 'Atari',
-        '--game_name', 'ALE/Pong-v5',
+        '--env_name', 'pong',
+        '--game_name', 'PongNoFrameskip-v4',
         '--algorithm_name', 'ours',      
         '--max_z', '2',
         '--div_thresh', '0.8',
         '--rex_thresh', '0.8',
         '--alpha_rex', '1.0',
         '--alpha_div', '1.0',
-        '--n_rollout_threads', '16', 
-        '--episode_length', '128',    
+        '--n_rollout_threads', '16', #shoudl be 16
+        '--episode_length', '128',    #shoudl be 128
         '--ppo_epoch', '4',
         '--num_mini_batch', '4',
         '--num_env_steps', '50000000',  

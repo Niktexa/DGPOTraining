@@ -300,12 +300,12 @@ class R_MAPPO():
         in_std_advantages = np.nanstd(in_advantages_copy)
         in_advantages = (in_advantages - in_mean_advantages) / (in_std_advantages + 1e-5)
 
-        print(f"TRAINER DEBUG - Advantage computation:")
-        print(f"  in_total_return range: [{in_total_return.min():.6f}, {in_total_return.max():.6f}]")
-        print(f"  in_total_preds range: [{in_total_preds.min():.6f}, {in_total_preds.max():.6f}]")
-        print(f"  in_advantages range: [{in_advantages.min():.6f}, {in_advantages.max():.6f}]")
-        print(f"  in_mean_advantages: {in_mean_advantages:.6f}")
-        print(f"  in_std_advantages: {in_std_advantages:.6f}")
+        # print(f"TRAINER DEBUG - Advantage computation:")
+        # print(f"  in_total_return range: [{in_total_return.min():.6f}, {in_total_return.max():.6f}]")
+        # print(f"  in_total_preds range: [{in_total_preds.min():.6f}, {in_total_preds.max():.6f}]")
+        # print(f"  in_advantages range: [{in_advantages.min():.6f}, {in_advantages.max():.6f}]")
+        # print(f"  in_mean_advantages: {in_mean_advantages:.6f}")
+        # print(f"  in_std_advantages: {in_std_advantages:.6f}")
         
 
         train_info = {}

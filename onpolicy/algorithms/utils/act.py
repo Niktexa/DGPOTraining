@@ -94,19 +94,19 @@ class ACTLayer(nn.Module):
             actions = action_logits.mode() if deterministic else action_logits.sample() 
             action_log_probs = action_logits.log_probs(actions)
 
-        # Debug action distributions
-        if x.shape[0] == 1:
-            self.debug_count += 1
-            if self.debug_count % 50 == 0:  # Only print every 50th call
-                probs = action_logits.probs.detach().cpu().numpy().flatten()
-                selected_action = actions.item()
-                print(f"ACTLAYER DEBUG: selected_action={selected_action}, all_probs={probs}")
+        # # Debug action distributions
+        # if x.shape[0] == 1:
+        #     self.debug_count += 1
+        #     if self.debug_count % 50 == 0:  # Only print every 50th call
+        #         probs = action_logits.probs.detach().cpu().numpy().flatten()
+        #         selected_action = actions.item()
+        #         print(f"ACTLAYER DEBUG: selected_action={selected_action}, all_probs={probs}")
         
-        if x.shape[0] == 1 and self.debug_count % 50 == 0:
-            probs = action_logits.probs.detach().cpu().numpy().flatten()
-            logits = action_logits.logits.detach().cpu().numpy().flatten() 
-            selected_action = actions.item()
-            print(f"ACTION SELECTION: logits={logits}, probs={probs}, selected={selected_action}, deterministic={deterministic}")
+        # if x.shape[0] == 1 and self.debug_count % 50 == 0:
+        #     probs = action_logits.probs.detach().cpu().numpy().flatten()
+        #     logits = action_logits.logits.detach().cpu().numpy().flatten() 
+        #     selected_action = actions.item()
+        #     print(f"ACTION SELECTION: logits={logits}, probs={probs}, selected={selected_action}, deterministic={deterministic}")
 
 
         return actions, action_log_probs

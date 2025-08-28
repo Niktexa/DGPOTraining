@@ -219,20 +219,20 @@ class R_Actor(nn.Module):
 
         actions, action_log_probs = self.act(actor_features, available_actions, deterministic)
 
-        if obs.shape[0] == 1:
-            z_val = int(obs[0, 0].item())  
-            self.z_counter[z_val] += 1
-            total = self.z_counter[0] + self.z_counter[1]
-            if total % 200 == 0:  
-                print(f"ACTOR Z-COUNTER: Z=0={self.z_counter[0]}, Z=1={self.z_counter[1]}")
+        # if obs.shape[0] == 1:
+        #     z_val = int(obs[0, 0].item())  
+        #     self.z_counter[z_val] += 1
+        #     total = self.z_counter[0] + self.z_counter[1]
+        #     if total % 200 == 0:  
+        #         print(f"ACTOR Z-COUNTER: Z=0={self.z_counter[0]}, Z=1={self.z_counter[1]}")
 
-        # Replace the debug in forward() with:
-        if obs.shape[0] == 1:
-            self.action_debug_count += 1
-            if self.action_debug_count % 50 == 0:  # Only print every 50th call
-                action_probs = self.act.get_probs(actor_features, available_actions)
-                z_val = int(obs[0, 0].item())
-                print(f"ACTOR ACTION DEBUG Z={z_val}: action={actions.item()}, probs={action_probs.detach().cpu().numpy().flatten()}")
+        # # Replace the debug in forward() with:
+        # if obs.shape[0] == 1:
+        #     self.action_debug_count += 1
+        #     if self.action_debug_count % 50 == 0:  # Only print every 50th call
+        #         action_probs = self.act.get_probs(actor_features, available_actions)
+        #         z_val = int(obs[0, 0].item())
+        #         print(f"ACTOR ACTION DEBUG Z={z_val}: action={actions.item()}, probs={action_probs.detach().cpu().numpy().flatten()}")
 
 
         return actions, action_log_probs, rnn_states

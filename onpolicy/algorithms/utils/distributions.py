@@ -18,11 +18,11 @@ class FixedCategorical(torch.distributions.Categorical):
         # return super().sample().unsqueeze(-1)  #old
 
         action = super().sample().unsqueeze(-1)
-        if self.probs.shape[0] == 1:
-            FixedCategorical._debug_count += 1
-            if FixedCategorical._debug_count % 50 == 0:  # Only every 50th call
-                probs = self.probs.detach().cpu().numpy().flatten()
-                print(f"CATEGORICAL SAMPLE: probs={probs}, sampled_action={action.item()}")
+        # if self.probs.shape[0] == 1:
+        #     FixedCategorical._debug_count += 1
+        #     if FixedCategorical._debug_count % 50 == 0:  # Only every 50th call
+        #         probs = self.probs.detach().cpu().numpy().flatten()
+        #         print(f"CATEGORICAL SAMPLE: probs={probs}, sampled_action={action.item()}")
         return action
 
     def log_probs(self, actions):
@@ -38,11 +38,11 @@ class FixedCategorical(torch.distributions.Categorical):
         # return self.probs.argmax(dim=-1, keepdim=True)  #old
 
         action = self.probs.argmax(dim=-1, keepdim=True)
-        if self.probs.shape[0] == 1:
-            FixedCategorical._debug_count += 1
-            if FixedCategorical._debug_count % 50 == 0:  # Only every 50th call
-                probs = self.probs.detach().cpu().numpy().flatten()
-                print(f"CATEGORICAL MODE: probs={probs}, mode_action={action.item()}")
+        # if self.probs.shape[0] == 1:
+        #     FixedCategorical._debug_count += 1
+        #     if FixedCategorical._debug_count % 50 == 0:  # Only every 50th call
+        #         probs = self.probs.detach().cpu().numpy().flatten()
+        #         print(f"CATEGORICAL MODE: probs={probs}, mode_action={action.item()}")
         return action
 
 
